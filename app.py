@@ -4,16 +4,19 @@ import re
 import os
 
 
-
+# =========================
+# Configuration
+# =========================
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-WEBHOOK_KEY = os.getenv("WEBHOOK_KEY")
 
 MAX_FILE_SIZE_MB = 5
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 
-
+# =========================
+# Page Configuration
+# =========================
 
 st.set_page_config(
     page_title="Resume Application",
@@ -26,7 +29,9 @@ st.title("📄 Job Application")
 st.write("Please fill in your details and upload your resume.")
 
 
-
+# =========================
+# Application Form
+# =========================
 
 with st.form("resume_form"):
 
@@ -47,38 +52,45 @@ with st.form("resume_form"):
     submit = st.form_submit_button("Submit Application")
 
 
-
+# =========================
+# Form Submission
+# =========================
 
 if submit:
 
     # Validate name
     if not name.strip():
+
         st.error("Please enter your name.")
 
     # Validate email
     elif not email.strip():
+
         st.error("Please enter your email.")
 
     elif not re.match(
         r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
         email
     ):
+
         st.error("Please enter a valid email address.")
 
     # Validate resume
     elif resume is None:
+
         st.error("Please upload your resume.")
 
-    # Validate configuration
+    # Validate webhook configuration
     elif not WEBHOOK_URL:
-        st.error("Application service is not configured.")
 
-    elif not WEBHOOK_KEY:
-        st.error("Application service authentication is not configured.")
+        st.error("Application service is not configured.")
 
     else:
 
-        # Check file size
+        # =========================
+        # File Size Validation
+        # =========================
+
         if resume.size > MAX_FILE_SIZE_BYTES:
 
             st.error(
@@ -90,14 +102,20 @@ if submit:
 
             with st.spinner("Submitting application..."):
 
-                # Sanitize filename
+                # =========================
+                # Sanitize Filename
+                # =========================
+
                 safe_filename = re.sub(
                     r"[^a-zA-Z0-9._-]",
                     "_",
                     resume.name
                 )
 
-                # Prepare PDF file
+                # =========================
+                # Prepare Resume File
+                # =========================
+
                 files = {
                     "resume": (
                         safe_filename,
@@ -106,27 +124,32 @@ if submit:
                     )
                 }
 
-                # Prepare candidate information
+                # =========================
+                # Candidate Information
+                # =========================
+
                 data = {
                     "candidate_name": name.strip(),
                     "candidate_email": email.strip(),
                     "qualification": qualification
                 }
 
-                # Webhook authentication
-                headers = {
-                    "X-Webhook-Key": WEBHOOK_KEY
-                }
-
                 try:
+
+                    # =========================
+                    # Send to n8n Webhook
+                    # =========================
 
                     response = requests.post(
                         WEBHOOK_URL,
-                        headers=headers,
                         data=data,
                         files=files,
                         timeout=60
                     )
+
+                    # =========================
+                    # Handle Response
+                    # =========================
 
                     if response.status_code == 200:
 
